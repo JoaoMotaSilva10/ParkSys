@@ -9,7 +9,7 @@ estiver usando.
 
 # Membros do grupo
 
-- **Antony Haro**
+- **Antony Haro dos Santos**
 - **Felipe Teruel Cordeiro**
 - **João Pedro Mota Silva**
 - **Matheus Barros Meneses**
