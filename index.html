@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="light">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ParkSys · Gestão de Estacionamento</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🅿️</text></svg>" />
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<!-- ============================================================
+     TELA DE LOGIN (demonstrativa)
+     ============================================================ -->
+<div id="login-screen" class="login-screen">
+  <div class="login-card card">
+    <div class="login-badge">🅿️</div>
+    <h1>ParkSys</h1>
+    <p class="muted">Painel administrativo de estacionamento</p>
+
+    <form id="login-form" novalidate>
+      <div class="field">
+        <label for="login-user">Usuário</label>
+        <input id="login-user" name="usuario" type="text" placeholder="admin" autocomplete="username" required />
+      </div>
+      <div class="field">
+        <label for="login-pass">Senha</label>
+        <div class="password-wrap">
+          <input id="login-pass" name="senha" type="password" placeholder="••••••" autocomplete="current-password" required />
+          <button type="button" id="login-pass-toggle" class="icon-btn password-toggle" aria-label="Mostrar senha">👁️</button>
+        </div>
+      </div>
+      <p id="login-error" class="form-error" hidden></p>
+      <button type="submit" class="btn btn-primary btn-block">Entrar</button>
+    </form>
+
+    <p class="login-hint">Acesso de demonstração: <code>admin</code> / <code>admin</code></p>
+    <p class="login-disclaimer">
+      Este login é apenas demonstrativo e não representa autenticação segura.
+      A sessão vale somente para esta aba do navegador e os dados ficam salvos
+      localmente, apenas neste navegador.
+    </p>
+  </div>
+</div>
+
+<!-- ============================================================
+     APLICAÇÃO (pós-login)
+     ============================================================ -->
+<div id="app" class="app" hidden>
+
+  <aside class="sidebar">
+    <div class="brand">
+      <span class="brand-icon">🅿️</span>
+      <div>
+        <div class="brand-name">ParkSys</div>
+        <div class="brand-tag">ambiente demonstrativo</div>
+      </div>
+    </div>
+
+    <nav class="nav" id="main-nav" aria-label="Navegação principal">
+      <button class="nav-item is-active" data-view="dashboard"><span class="nav-icon">🏠</span>Visão geral</button>
+      <button class="nav-item" data-view="mapa"><span class="nav-icon">🗺️</span>Estacionamento</button>
+      <button class="nav-item" data-view="clientes"><span class="nav-icon">👤</span>Clientes</button>
+      <button class="nav-item" data-view="colaboradores"><span class="nav-icon">👥</span>Colaboradores</button>
+      <button class="nav-item" data-view="veiculos"><span class="nav-icon">🚗</span>Veículos</button>
+      <button class="nav-item" data-view="tickets"><span class="nav-icon">🎫</span>Tickets</button>
+      <button class="nav-item" data-view="relatorios"><span class="nav-icon">📄</span>Relatórios</button>
+      <button class="nav-item" data-view="config"><span class="nav-icon">⚙️</span>Configurações</button>
+    </nav>
+
+    <div class="sidebar-footer">
+      <button id="theme-toggle" class="btn btn-ghost btn-block" type="button" aria-pressed="false">
+        <span id="theme-icon">🌙</span> <span id="theme-label">Modo escuro</span>
+      </button>
+      <div class="admin-chip">
+        <span class="admin-avatar">A</span>
+        <div>
+          <div class="admin-name">admin</div>
+          <div class="admin-role">Administrador (demo)</div>
+        </div>
+      </div>
+      <button id="logout-btn" class="btn btn-outline btn-block" type="button">Sair</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <div>
+        <h2 id="view-title">Visão geral</h2>
+        <p id="view-subtitle" class="muted">Indicadores calculados a partir dos dados salvos</p>
+      </div>
+      <div class="topbar-right">
+        <span class="demo-badge" title="Protótipo sem backend: dados salvos apenas neste navegador">● Demonstração local</span>
+        <div class="clock" id="clock">--:--:--</div>
+      </div>
+    </header>
+
+    <div class="content">
+
+      <!-- ===================== VISÃO GERAL ===================== -->
+      <section id="view-dashboard" class="view">
+        <div class="stat-grid" id="stat-grid"></div>
+
+        <div class="card panel">
+          <div class="panel-header"><h3>Atalhos</h3></div>
+          <div class="shortcut-grid" id="shortcut-grid">
+            <button class="shortcut" data-action="novo-cliente">👤<span>Cadastrar cliente</span></button>
+            <button class="shortcut" data-action="ir-mapa">🅿️<span>Registrar entrada</span></button>
+            <button class="shortcut" data-action="ir-mapa">🔎<span>Vagas disponíveis</span></button>
+            <button class="shortcut" data-action="ir-clientes">📋<span>Consultar clientes</span></button>
+            <button class="shortcut" data-action="ir-veiculos">🚗<span>Consultar veículos</span></button>
+            <button class="shortcut" data-action="ir-tickets">🎫<span>Localizar ticket</span></button>
+            <button class="shortcut" data-action="ir-relatorios">📄<span>Relatórios</span></button>
+          </div>
+        </div>
+
+        <div class="card panel">
+          <div class="panel-header"><h3>Atividade recente</h3></div>
+          <div class="table-wrap">
+            <table class="table" id="recent-activity-table">
+              <thead><tr><th>Data/Hora</th><th>Operação</th><th>Entidade</th><th>Resumo</th><th>Responsável</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================== ESTACIONAMENTO (MAPA) ===================== -->
+      <section id="view-mapa" class="view" hidden>
+        <div id="lot-full-banner" class="banner banner-warning" hidden></div>
+
+        <div class="map-toolbar">
+          <div class="legend">
+            <span class="legend-item"><i class="dot dot-livre"></i> Livre</span>
+            <span class="legend-item"><i class="dot dot-ocupada"></i> Ocupada</span>
+            <span class="legend-item"><i class="dot dot-interditada"></i> Interditada</span>
+          </div>
+          <div class="map-actions">
+            <button id="btn-bilhete-perdido" class="btn btn-outline">🎫 Registrar bilhete perdido</button>
+          </div>
+        </div>
+
+        <div class="floor-plan-wrap">
+          <div class="floor-plan" id="floor-plan"><!-- gerado via JS --></div>
+        </div>
+      </section>
+
+      <!-- ===================== CLIENTES ===================== -->
+      <section id="view-clientes" class="view" hidden>
+        <div class="toolbar">
+          <input id="clientes-search" class="input-text" type="search" placeholder="Buscar por nome, CPF ou telefone..." />
+          <div class="toolbar-actions">
+            <label class="filter-check"><input type="checkbox" id="clientes-mostrar-inativos" /> Mostrar inativos</label>
+            <button id="btn-export-clientes-csv" class="btn btn-outline">⬇️ Exportar CSV</button>
+            <button id="btn-new-cliente" class="btn btn-primary">+ Novo cliente</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="table-wrap">
+            <table class="table" id="clientes-table">
+              <thead><tr><th>Nome</th><th>CPF</th><th>Telefone</th><th>E-mail</th><th>Veículos</th><th>Status</th><th></th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================== COLABORADORES ===================== -->
+      <section id="view-colaboradores" class="view" hidden>
+        <div class="toolbar">
+          <input id="colaboradores-search" class="input-text" type="search" placeholder="Buscar por nome ou cargo..." />
+          <div class="toolbar-actions">
+            <label class="filter-check"><input type="checkbox" id="colaboradores-mostrar-inativos" /> Mostrar inativos</label>
+            <button id="btn-export-colaboradores-csv" class="btn btn-outline">⬇️ Exportar CSV</button>
+            <button id="btn-new-colaborador" class="btn btn-primary">+ Novo colaborador</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="table-wrap">
+            <table class="table" id="colaboradores-table">
+              <thead><tr><th>Nome</th><th>CPF</th><th>Cargo</th><th>Telefone</th><th>E-mail</th><th>Status</th><th></th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================== VEÍCULOS ===================== -->
+      <section id="view-veiculos" class="view" hidden>
+        <div class="toolbar">
+          <input id="veiculos-search" class="input-text" type="search" placeholder="Buscar por placa, modelo ou cliente..." />
+          <div class="toolbar-actions">
+            <label class="filter-check"><input type="checkbox" id="veiculos-mostrar-inativos" /> Mostrar inativos</label>
+            <button id="btn-export-veiculos-csv" class="btn btn-outline">⬇️ Exportar CSV</button>
+            <button id="btn-new-veiculo" class="btn btn-primary">+ Novo veículo</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="table-wrap">
+            <table class="table" id="veiculos-table">
+              <thead><tr><th>Placa</th><th>Marca/Modelo</th><th>Cor</th><th>Categoria</th><th>Cliente</th><th>Situação</th><th>Status</th><th></th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================== TICKETS ===================== -->
+      <section id="view-tickets" class="view" hidden>
+        <div class="toolbar">
+          <input id="tickets-search" class="input-text" type="search" placeholder="Buscar por número, placa ou cliente..." />
+          <div class="toolbar-actions">
+            <button id="btn-bilhete-perdido-2" class="btn btn-outline">🎫 Registrar bilhete perdido</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="table-wrap">
+            <table class="table" id="tickets-table">
+              <thead><tr><th>Ticket</th><th>Placa</th><th>Cliente</th><th>Vaga</th><th>Emitido em</th><th>Status</th><th></th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================== RELATÓRIOS ===================== -->
+      <section id="view-relatorios" class="view" hidden>
+        <div class="card panel">
+          <div class="panel-header">
+            <h3>Período do relatório</h3>
+            <div class="panel-actions">
+              <input type="date" id="relatorio-data-ini" class="input-text" />
+              <span class="muted">até</span>
+              <input type="date" id="relatorio-data-fim" class="input-text" />
+              <button id="btn-relatorio-aplicar" class="btn btn-outline">Aplicar filtro</button>
+            </div>
+          </div>
+          <div id="relatorio-resumo" class="stat-grid"></div>
+          <div class="panel"><div class="bar-chart" id="revenue-chart"></div></div>
+        </div>
+
+        <div class="card panel">
+          <div class="panel-header">
+            <h3>Sessões no período</h3>
+            <div class="panel-actions">
+              <button id="btn-export-sessoes-csv" class="btn btn-outline btn-sm">⬇️ CSV sessões</button>
+              <button id="btn-export-relatorio-pdf" class="btn btn-outline btn-sm">🖨️ Exportar PDF</button>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table class="table" id="relatorio-table">
+              <thead><tr><th>Sessão</th><th>Placa</th><th>Cliente</th><th>Vaga</th><th>Entrada</th><th>Saída</th><th>Valor</th><th>Situação</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card panel">
+          <div class="panel-header">
+            <h3>Histórico de operações (auditoria)</h3>
+            <div class="panel-actions">
+              <select id="hist-filter-entidade" class="input-select">
+                <option value="">Todas as entidades</option>
+                <option value="Cliente">Cliente</option>
+                <option value="Colaborador">Colaborador</option>
+                <option value="Veículo">Veículo</option>
+                <option value="Vaga">Vaga</option>
+                <option value="Sessão">Sessão</option>
+                <option value="Ticket">Ticket</option>
+                <option value="Configuração">Configuração</option>
+              </select>
+              <button id="btn-export-historico-csv" class="btn btn-outline btn-sm">⬇️ CSV histórico</button>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table class="table" id="historico-table">
+              <thead><tr><th>Data/Hora</th><th>Ação</th><th>Entidade</th><th>Resumo</th><th>Responsável</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card panel">
+          <div class="panel-header"><h3>Outras exportações (CSV)</h3></div>
+          <div class="export-row">
+            <button id="btn-export-clientes-csv-2" class="btn btn-outline btn-sm">Clientes</button>
+            <button id="btn-export-colaboradores-csv-2" class="btn btn-outline btn-sm">Colaboradores</button>
+            <button id="btn-export-veiculos-csv-2" class="btn btn-outline btn-sm">Veículos</button>
+            <button id="btn-export-vagas-csv" class="btn btn-outline btn-sm">Vagas</button>
+          </div>
+          <p class="muted export-note">Arquivos CSV (UTF-8 com BOM), compatíveis com Excel/LibreOffice. Formato .xlsx nativo exigiria biblioteca externa.</p>
+        </div>
+      </section>
+
+      <!-- ===================== CONFIGURAÇÕES ===================== -->
+      <section id="view-config" class="view" hidden>
+        <div class="card panel">
+          <div class="panel-header"><h3>Tarifas e identificação (dados de demonstração)</h3></div>
+          <form id="config-form">
+            <div class="form-grid">
+              <div class="field">
+                <label for="cfg-nome">Nome do estacionamento</label>
+                <input id="cfg-nome" type="text" class="input-text" />
+              </div>
+              <div class="field">
+                <label for="cfg-preco">Preço por hora — R$ (demo)</label>
+                <input id="cfg-preco" type="number" min="0" step="0.5" class="input-text" />
+              </div>
+              <div class="field">
+                <label for="cfg-taxa-perdido">Taxa de bilhete perdido — R$ (demo)</label>
+                <input id="cfg-taxa-perdido" type="number" min="0" step="0.5" class="input-text" />
+              </div>
+              <div class="field">
+                <label for="cfg-amostra-min">Amostra mínima p/ previsão (sessões encerradas)</label>
+                <input id="cfg-amostra-min" type="number" min="1" step="1" class="input-text" />
+              </div>
+            </div>
+            <button type="submit" class="btn btn-primary">Salvar preferências</button>
+          </form>
+        </div>
+
+        <div class="card panel">
+          <div class="panel-header">
+            <h3>Locais alternativos próximos</h3>
+          </div>
+          <p class="muted">Exibidos no aviso de estacionamento lotado somente se cadastrados aqui.</p>
+          <div class="table-wrap">
+            <table class="table" id="locais-table">
+              <thead><tr><th>Nome</th><th>Endereço</th><th>Observações</th><th></th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          <form id="form-local-alt" class="form-grid local-alt-form">
+            <div class="field"><label for="local-nome">Nome</label><input id="local-nome" class="input-text" type="text" /></div>
+            <div class="field"><label for="local-endereco">Endereço</label><input id="local-endereco" class="input-text" type="text" /></div>
+            <div class="field"><label for="local-obs">Observações</label><input id="local-obs" class="input-text" type="text" /></div>
+            <button type="submit" class="btn btn-outline">+ Adicionar local</button>
+          </form>
+        </div>
+
+        <div class="card panel">
+          <div class="panel-header"><h3>Backup e dados de demonstração</h3></div>
+          <p class="muted">
+            Os dados ficam salvos apenas neste navegador (localStorage). Limpar os dados do navegador
+            ou trocar de dispositivo/perfil remove o acesso a eles. Use o backup em JSON para exportar
+            ou restaurar manualmente.
+          </p>
+          <div class="export-row">
+            <button id="btn-export-backup" class="btn btn-outline">⬇️ Exportar backup (JSON)</button>
+            <label class="btn btn-outline file-btn">⬆️ Importar backup (JSON)
+              <input type="file" id="input-import-backup" accept="application/json" hidden />
+            </label>
+            <button id="btn-reset-mock" class="btn btn-danger-outline">↺ Restaurar dados de exemplo</button>
+          </div>
+        </div>
+
+        <div class="card panel">
+          <div class="panel-header"><h3>Aviso</h3></div>
+          <p class="muted">
+            Protótipo demonstrativo, sem backend. Não há integração real com pagamentos, cancelas ou
+            leitura de placas. Este sistema não deve ser considerado seguro para produção nem
+            compatível com a LGPD apenas por seguir boas práticas básicas de desenvolvimento.
+          </p>
+        </div>
+      </section>
+
+    </div>
+  </main>
+</div>
+
+<!-- ============ DRAWER: DETALHE DA VAGA ============ -->
+<div id="vaga-drawer-overlay" class="overlay" hidden></div>
+<aside id="vaga-drawer" class="drawer" hidden aria-label="Detalhes da vaga">
+  <div class="drawer-header">
+    <h3 id="vaga-drawer-title">Vaga</h3>
+    <button class="icon-btn" id="vaga-drawer-close" aria-label="Fechar">✕</button>
+  </div>
+  <div class="drawer-body" id="vaga-drawer-body"></div>
+</aside>
+
+<!-- ============ MODAL: OCUPAR / EDITAR SESSÃO ============ -->
+<div id="modal-ocupar" class="modal-overlay" hidden>
+  <div class="modal card">
+    <div class="modal-header">
+      <h3 id="modal-ocupar-title">Registrar entrada</h3>
+      <button class="icon-btn modal-close" data-close="modal-ocupar">✕</button>
+    </div>
+    <form id="form-ocupar" novalidate>
+      <input type="hidden" id="ocupar-vaga-id" />
+      <input type="hidden" id="ocupar-sessao-id" />
+      <input type="hidden" id="ocupar-cliente-id" />
+      <input type="hidden" id="ocupar-veiculo-id" />
+
+      <div class="form-section">
+        <h4>Cliente</h4>
+        <div class="field">
+          <label for="ocupar-cliente-busca">Buscar cliente existente</label>
+          <input id="ocupar-cliente-busca" class="input-text" list="ocupar-cliente-list" placeholder="Nome ou CPF..." autocomplete="off" />
+          <datalist id="ocupar-cliente-list"></datalist>
+        </div>
+        <div class="form-grid">
+          <div class="field">
+            <label for="ocupar-nome">Nome completo *</label>
+            <input id="ocupar-nome" class="input-text" type="text" required />
+          </div>
+          <div class="field">
+            <label for="ocupar-cpf">CPF *</label>
+            <input id="ocupar-cpf" class="input-text" type="text" placeholder="000.000.000-00" required />
+          </div>
+          <div class="field">
+            <label for="ocupar-telefone">Telefone</label>
+            <input id="ocupar-telefone" class="input-text" type="text" placeholder="(00) 00000-0000" />
+          </div>
+          <div class="field">
+            <label for="ocupar-email">E-mail</label>
+            <input id="ocupar-email" class="input-text" type="text" placeholder="nome@email.com" />
+          </div>
+        </div>
+        <p id="ocupar-cliente-aviso" class="form-warning" hidden></p>
+      </div>
+
+      <div class="form-section">
+        <h4>Veículo</h4>
+        <div class="field">
+          <label for="ocupar-veiculo-busca">Buscar veículo existente</label>
+          <input id="ocupar-veiculo-busca" class="input-text" list="ocupar-veiculo-list" placeholder="Placa..." autocomplete="off" />
+          <datalist id="ocupar-veiculo-list"></datalist>
+        </div>
+        <div class="form-grid">
+          <div class="field">
+            <label for="ocupar-placa">Placa *</label>
+            <input id="ocupar-placa" class="input-text" type="text" placeholder="ABC1D23 ou ABC1234" required maxlength="8" />
+          </div>
+          <div class="field">
+            <label for="ocupar-marca">Marca</label>
+            <input id="ocupar-marca" class="input-text" type="text" />
+          </div>
+          <div class="field">
+            <label for="ocupar-modelo">Modelo</label>
+            <input id="ocupar-modelo" class="input-text" type="text" />
+          </div>
+          <div class="field">
+            <label for="ocupar-cor">Cor</label>
+            <input id="ocupar-cor" class="input-text" type="text" />
+          </div>
+          <div class="field">
+            <label for="ocupar-categoria">Categoria</label>
+            <select id="ocupar-categoria" class="input-select">
+              <option value="Carro">Carro</option>
+              <option value="Moto">Moto</option>
+              <option value="Utilitário">Utilitário</option>
+              <option value="Outro">Outro</option>
+            </select>
+          </div>
+        </div>
+        <p id="ocupar-veiculo-aviso" class="form-warning" hidden></p>
+      </div>
+
+      <div class="form-section">
+        <h4>Sessão</h4>
+        <div class="field">
+          <label for="ocupar-previsao">Previsão de saída (opcional)</label>
+          <input id="ocupar-previsao" class="input-text" type="datetime-local" />
+        </div>
+      </div>
+
+      <p id="ocupar-error" class="form-error" hidden></p>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" data-close="modal-ocupar">Cancelar</button>
+        <button type="submit" class="btn btn-primary" id="ocupar-submit-btn">Confirmar entrada</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ============ MODAL: RESUMO DE CONFERÊNCIA (entrada) ============ -->
+<div id="modal-resumo-entrada" class="modal-overlay" hidden>
+  <div class="modal card modal-sm">
+    <div class="modal-header">
+      <h3>Confirme os dados da entrada</h3>
+      <button class="icon-btn modal-close" data-close="modal-resumo-entrada">✕</button>
+    </div>
+    <div class="modal-body-plain" id="resumo-entrada-body"></div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-outline" data-close="modal-resumo-entrada">Voltar e corrigir</button>
+      <button type="button" id="resumo-entrada-confirmar" class="btn btn-primary">Confirmar e gerar ticket</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ MODAL: REGISTRAR SAÍDA ============ -->
+<div id="modal-saida" class="modal-overlay" hidden>
+  <div class="modal card">
+    <div class="modal-header">
+      <h3>Registrar saída</h3>
+      <button class="icon-btn modal-close" data-close="modal-saida">✕</button>
+    </div>
+    <div class="modal-body-plain">
+      <input type="hidden" id="saida-sessao-id" />
+      <div id="saida-resumo" class="detail-list"></div>
+      <div class="field">
+        <label class="filter-check"><input type="checkbox" id="saida-ajustar" /> Ajustar valor manualmente (requer justificativa)</label>
+      </div>
+      <div id="saida-ajuste-fields" hidden>
+        <div class="form-grid">
+          <div class="field">
+            <label for="saida-valor-ajustado">Novo valor (R$)</label>
+            <input id="saida-valor-ajustado" class="input-text" type="number" min="0" step="0.5" />
+          </div>
+          <div class="field">
+            <label for="saida-justificativa">Justificativa *</label>
+            <input id="saida-justificativa" class="input-text" type="text" />
+          </div>
+        </div>
+      </div>
+      <p id="saida-error" class="form-error" hidden></p>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-outline" data-close="modal-saida">Cancelar</button>
+      <button type="button" id="saida-confirmar" class="btn btn-primary">Confirmar saída</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ MODAL: CLIENTE (CRUD) ============ -->
+<div id="modal-cliente" class="modal-overlay" hidden>
+  <div class="modal card">
+    <div class="modal-header">
+      <h3 id="modal-cliente-title">Novo cliente</h3>
+      <button class="icon-btn modal-close" data-close="modal-cliente">✕</button>
+    </div>
+    <form id="form-cliente" novalidate>
+      <input type="hidden" id="cliente-id" />
+      <div class="form-grid">
+        <div class="field">
+          <label for="cliente-nome">Nome completo *</label>
+          <input id="cliente-nome" class="input-text" type="text" required />
+        </div>
+        <div class="field">
+          <label for="cliente-cpf">CPF *</label>
+          <input id="cliente-cpf" class="input-text" type="text" placeholder="000.000.000-00" required />
+        </div>
+        <div class="field">
+          <label for="cliente-telefone">Telefone</label>
+          <input id="cliente-telefone" class="input-text" type="text" placeholder="(00) 00000-0000" />
+        </div>
+        <div class="field">
+          <label for="cliente-email">E-mail</label>
+          <input id="cliente-email" class="input-text" type="text" placeholder="nome@email.com" />
+        </div>
+      </div>
+      <div class="field">
+        <label for="cliente-obs">Observações</label>
+        <textarea id="cliente-obs" class="input-text" rows="2"></textarea>
+      </div>
+      <p id="cliente-error" class="form-error" hidden></p>
+      <p id="cliente-aviso" class="form-warning" hidden></p>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" data-close="modal-cliente">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Salvar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ============ MODAL: VEÍCULO (CRUD) ============ -->
+<div id="modal-veiculo" class="modal-overlay" hidden>
+  <div class="modal card">
+    <div class="modal-header">
+      <h3 id="modal-veiculo-title">Novo veículo</h3>
+      <button class="icon-btn modal-close" data-close="modal-veiculo">✕</button>
+    </div>
+    <form id="form-veiculo" novalidate>
+      <input type="hidden" id="veiculo-id" />
+      <div class="form-grid">
+        <div class="field">
+          <label for="veiculo-placa">Placa *</label>
+          <input id="veiculo-placa" class="input-text" type="text" placeholder="ABC1D23" required maxlength="8" />
+        </div>
+        <div class="field">
+          <label for="veiculo-marca">Marca</label>
+          <input id="veiculo-marca" class="input-text" type="text" />
+        </div>
+        <div class="field">
+          <label for="veiculo-modelo">Modelo</label>
+          <input id="veiculo-modelo" class="input-text" type="text" />
+        </div>
+        <div class="field">
+          <label for="veiculo-cor">Cor</label>
+          <input id="veiculo-cor" class="input-text" type="text" />
+        </div>
+        <div class="field">
+          <label for="veiculo-categoria">Categoria</label>
+          <select id="veiculo-categoria" class="input-select">
+            <option value="Carro">Carro</option>
+            <option value="Moto">Moto</option>
+            <option value="Utilitário">Utilitário</option>
+            <option value="Outro">Outro</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="veiculo-cliente">Cliente responsável *</label>
+          <select id="veiculo-cliente" class="input-select" required></select>
+        </div>
+        <div class="field">
+          <label for="veiculo-status">Status</label>
+          <select id="veiculo-status" class="input-select">
+            <option value="ativo">Ativo</option>
+            <option value="inativo">Inativo</option>
+          </select>
+        </div>
+      </div>
+      <p id="veiculo-error" class="form-error" hidden></p>
+      <p id="veiculo-aviso" class="form-warning" hidden></p>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" data-close="modal-veiculo">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Salvar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ============ MODAL: COLABORADOR (CRUD) ============ -->
+<div id="modal-colaborador" class="modal-overlay" hidden>
+  <div class="modal card">
+    <div class="modal-header">
+      <h3 id="modal-colaborador-title">Novo colaborador</h3>
+      <button class="icon-btn modal-close" data-close="modal-colaborador">✕</button>
+    </div>
+    <form id="form-colaborador" novalidate>
+      <input type="hidden" id="colaborador-id" />
+      <div class="form-grid">
+        <div class="field">
+          <label for="colaborador-nome">Nome completo *</label>
+          <input id="colaborador-nome" class="input-text" type="text" required />
+        </div>
+        <div class="field">
+          <label for="colaborador-cpf">CPF *</label>
+          <input id="colaborador-cpf" class="input-text" type="text" placeholder="000.000.000-00" required />
+        </div>
+        <div class="field">
+          <label for="colaborador-telefone">Telefone</label>
+          <input id="colaborador-telefone" class="input-text" type="text" />
+        </div>
+        <div class="field">
+          <label for="colaborador-email">E-mail</label>
+          <input id="colaborador-email" class="input-text" type="text" />
+        </div>
+        <div class="field">
+          <label for="colaborador-cargo">Cargo/função *</label>
+          <select id="colaborador-cargo" class="input-select" required>
+            <option value="Gerente">Gerente</option>
+            <option value="Atendente">Atendente</option>
+            <option value="Manobrista">Manobrista</option>
+            <option value="Segurança">Segurança</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="colaborador-status">Status</label>
+          <select id="colaborador-status" class="input-select">
+            <option value="ativo">Ativo</option>
+            <option value="inativo">Inativo</option>
+          </select>
+        </div>
+      </div>
+      <p id="colaborador-error" class="form-error" hidden></p>
+      <p id="colaborador-aviso" class="form-warning" hidden></p>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" data-close="modal-colaborador">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Salvar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ============ MODAL: BILHETE PERDIDO ============ -->
+<div id="modal-bilhete-perdido" class="modal-overlay" hidden>
+  <div class="modal card modal-sm">
+    <div class="modal-header">
+      <h3>Registrar bilhete perdido</h3>
+      <button class="icon-btn modal-close" data-close="modal-bilhete-perdido">✕</button>
+    </div>
+    <div class="modal-body-plain">
+      <p class="muted">
+        Localize a sessão ativa por placa, cliente ou vaga. A sessão e a vaga
+        permanecem ativas: apenas a ocorrência e a taxa demonstrativa serão registradas.
+      </p>
+      <div class="field">
+        <label for="perdido-busca">Sessão ativa</label>
+        <input id="perdido-busca" class="input-text" list="perdido-sessao-list" placeholder="Placa, cliente ou vaga..." autocomplete="off" />
+        <datalist id="perdido-sessao-list"></datalist>
+        <input type="hidden" id="perdido-sessao-id" />
+      </div>
+      <div id="perdido-preview" class="detail-list"></div>
+      <div class="field">
+        <label for="perdido-justificativa">Justificativa (opcional)</label>
+        <input id="perdido-justificativa" class="input-text" type="text" />
+      </div>
+      <p id="perdido-error" class="form-error" hidden></p>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-outline" data-close="modal-bilhete-perdido">Cancelar</button>
+      <button type="button" id="perdido-confirmar" class="btn btn-danger">Confirmar e cobrar taxa</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ MODAL: EDITAR MOTIVO DE INTERDIÇÃO ============ -->
+<div id="modal-interditar" class="modal-overlay" hidden>
+  <div class="modal card modal-sm">
+    <div class="modal-header">
+      <h3 id="modal-interditar-title">Interditar vaga</h3>
+      <button class="icon-btn modal-close" data-close="modal-interditar">✕</button>
+    </div>
+    <div class="modal-body-plain">
+      <input type="hidden" id="interditar-vaga-id" />
+      <div class="field">
+        <label for="interditar-motivo">Motivo *</label>
+        <input id="interditar-motivo" class="input-text" type="text" placeholder="Ex: manutenção elétrica" />
+      </div>
+      <p id="interditar-error" class="form-error" hidden></p>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-outline" data-close="modal-interditar">Cancelar</button>
+      <button type="button" id="interditar-confirmar" class="btn btn-primary">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ MODAL: CONFIRMAÇÃO GENÉRICA ============ -->
+<div id="modal-confirm" class="modal-overlay" hidden>
+  <div class="modal card modal-sm">
+    <div class="modal-header">
+      <h3 id="confirm-title">Confirmar ação</h3>
+      <button class="icon-btn modal-close" data-close="modal-confirm">✕</button>
+    </div>
+    <div class="modal-body-plain">
+      <p id="confirm-message" class="muted"></p>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-outline" data-close="modal-confirm">Cancelar</button>
+      <button type="button" id="confirm-ok-btn" class="btn btn-danger">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ MODAL: TICKET / COMPROVANTE ============ -->
+<div id="modal-ticket" class="modal-overlay" hidden>
+  <div class="modal card modal-sm">
+    <div class="modal-header">
+      <h3 id="modal-ticket-title">Ticket</h3>
+      <button class="icon-btn modal-close" data-close="modal-ticket">✕</button>
+    </div>
+    <div class="modal-body-plain">
+      <div class="ticket" id="ticket-content"></div>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-outline" data-close="modal-ticket">Fechar</button>
+      <button type="button" id="ticket-print-btn" class="btn btn-primary">🖨️ Imprimir / Exportar PDF</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container" class="toast-container" aria-live="polite"></div>
+
+<script src="script.js"></script>
+</body>
+</html>
